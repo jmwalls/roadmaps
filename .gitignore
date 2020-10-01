@@ -127,3 +127,9 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# vim files
+*.swp
+
+# data cache
+data-cache
