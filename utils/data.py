@@ -9,6 +9,8 @@ import zipfile
 import numpy as np
 import pandas as pd
 
+import pymap3d as pm  # Only necessary for LLA to ENU conversion.
+
 
 KITTI_URL = 'https://s3.eu-central-1.amazonaws.com/avg-kitti/raw_data'
 KITTI_OUT = 'data-cache'
@@ -186,6 +188,15 @@ def get_kitti_data(*, drive, sequence, force_download=False):
     # Construct data frame from OXTS.
     df_oxts = _load_kitti_oxts(
         path=os.path.join(path, f'{drive}_drive_{sequence:04d}_sync', 'oxts'))
+
+    # Add columns for ENU position.
+    enu = pm.geodetic2enu(df_oxts['lat'], df_oxts['lon'], df_oxts['alt'],
+                          df_oxts['lat'][0], df_oxts['lon'][0], df_oxts['alt'][0],
+                          ell=pm.utils.Ellipsoid('wgs84'),
+                          deg=True)
+    df_oxts['pe'] = enu[0]
+    df_oxts['pn'] = enu[1]
+    df_oxts['pu'] = enu[2]
 
     # Construct list of data frames from each camera--should have 4 cameras.
     dfs = [_load_kitti_image(base=os.path.join(path, f'{drive}_drive_{sequence:04d}_sync'),
